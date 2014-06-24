@@ -30,13 +30,12 @@ int linenum = 1;
 ")"						printf("TRPAREN ");return TOKEN(TRPAREN);
 "{"						printf("TLBRACE "); return TOKEN(TLBRACE);
 "}"						printf("TRBRACE "); return TOKEN(TRBRACE);
-"."						printf("TDOT "); return TOKEN(TDOT);
-","						printf("TCOMMA ");return TOKEN(TCOMMA);
 "+"						printf("TPLUS "); return TOKEN(TPLUS);
 "-"						printf("TMINUS "); return TOKEN(TMINUS);
 "*"						printf("TMUL "); return TOKEN(TMUL);
 "/"						printf("TDIV "); return TOKEN(TDIV);
 ";"						printf("TSEMICOL "); return TOKEN(TSEMICOL);
+"||"						printf("TPARCOMP "); return TOKEN(TPARCOMP);
 .						printf("Unknown token at line %d: %s\n", linenum, yytext); YY_FATAL_ERROR("");
 
 %%

@@ -34,7 +34,7 @@
  */
 %token <string> TIDENTIFIER TINTEGER TDOUBLE
 %token <token> TCEQ TCNE TCLT TCLE TCGT TCGE TEQUAL
-%token <token> TLPAREN TRPAREN TLBRACE TRBRACE TCOMMA TDOT TSEMICOL
+%token <token> TLPAREN TRPAREN TLBRACE TRBRACE TCOMMA TDOT TSEMICOL TPARCOMP
 %token <token> TPLUS TMINUS TMUL TDIV
 %token <token> TRETURN TIF TELSE TWHILE
 
@@ -87,7 +87,6 @@ while_stmt : TWHILE TLPAREN expr TRPAREN stmt { $$ = new NWhileStatement($3, $5)
 		   | TWHILE TLPAREN expr TRPAREN TLBRACE stmts TRBRACE { $$ = new NWhileStatement($3, $6); }
      	   ;
 
-
 block : TLBRACE stmts TRBRACE { $$ = $2; }
 	  | TLBRACE TRBRACE { $$ = new NBlock(); }
 	  ;
@@ -122,6 +121,8 @@ expr : ident TEQUAL expr { $$ = new NAssignment(*$<ident>1, *$3); }
          | expr TMINUS expr { $$ = new NBinaryOperator(*$1, $2, *$3); }
  	 | expr comparison expr { $$ = new NBinaryOperator(*$1, $2, *$3); }
      | TLPAREN expr TRPAREN { $$ = $2; }
+     | expr TSEMICOL expr { $$ = $3; }
+     | expr TPARCOMP expr { $$ = $3; }
 	 ;
 	
 call_args : /*blank*/  { $$ = new ExpressionList(); }
