@@ -18,6 +18,7 @@
 	NExpression *expr;
 	NStatement *stmt;
 	NIfStatement *if_stmt;
+	NWhileStatement *while_stmt;
 	NIdentifier *ident;
 	NVariableDeclaration *var_decl;
 	std::vector<NVariableDeclaration*> *varvec;
@@ -35,7 +36,7 @@
 %token <token> TCEQ TCNE TCLT TCLE TCGT TCGE TEQUAL
 %token <token> TLPAREN TRPAREN TLBRACE TRBRACE TCOMMA TDOT TSEMICOL
 %token <token> TPLUS TMINUS TMUL TDIV
-%token <token> TRETURN TIF TELSE
+%token <token> TRETURN TIF TELSE TWHILE
 
 /* Define the type of node our nonterminal symbols represent.
    The types refer to the %union declaration above. Ex: when
@@ -49,6 +50,7 @@
 %type <block> program stmts block
 %type <stmt> stmt var_decl func_decl
 %type <if_stmt> if_stmt
+%type <while_stmt> while_stmt
 %type <token> comparison
 
 /* Operator precedence for mathematical operators */
@@ -70,11 +72,20 @@ stmt : var_decl | func_decl
 	 | expr { $$ = new NExpressionStatement(*$1); }
 	 | TRETURN expr { $$ = new NReturnStatement(*$2); }
 	 | if_stmt
+	 | while_stmt
      ;
 
-if_stmt : TIF TLPAREN expr TRPAREN stmt { $$ = new NIfStatement(*$3, *$5, *$5); }
-	 	| TIF TLPAREN expr TRPAREN stmt TELSE stmt { $$ = new NIfStatement(*$3, *$5, *$7); }
+if_stmt : TIF TLPAREN expr TRPAREN stmt {   $$ = new NIfStatement($3, $5, $5); }
+	 	| TIF TLPAREN expr TRPAREN stmt TELSE stmt { $$ = new NIfStatement($3, $5, $7); }
+	 	| TIF TLPAREN expr TRPAREN stmt TELSE TLBRACE stmts TRBRACE { $$ = new NIfStatement($3, $5, $8); }
+	 	| TIF TLPAREN expr TRPAREN TLBRACE stmts TRBRACE { $$ = new NIfStatement($3, $6, $6); }
+	 	| TIF TLPAREN expr TRPAREN TLBRACE stmts TRBRACE TELSE TLBRACE stmts TRBRACE { $$ = new NIfStatement($3, $6, $10); }
+	 	| TIF TLPAREN expr TRPAREN TLBRACE stmts TRBRACE TELSE stmt { $$ = new NIfStatement($3, $6, $9); }
      	;
+
+while_stmt : TWHILE TLPAREN expr TRPAREN stmt { $$ = new NWhileStatement($3, $5); }
+		   | TWHILE TLPAREN expr TRPAREN TLBRACE stmts TRBRACE { $$ = new NWhileStatement($3, $6); }
+     	   ;
 
 
 block : TLBRACE stmts TRBRACE { $$ = $2; }

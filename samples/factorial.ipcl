@@ -1,0 +1,10 @@
+long fact(long a) {
+	long res := 1
+	while(a) {
+		res := res * a
+		a := a - 1
+	}
+	return res
+}
+
+print(fact(6))

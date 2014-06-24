@@ -76,11 +76,13 @@ Value* NDouble::codeGen(CodeGenContext& context)
 Value* NIdentifier::codeGen(CodeGenContext& context)
 {
 	std::cout << "Creating identifier reference: " << name << endl;
-	if (context.locals().find(name) == context.locals().end()) {
+	Value* var = context.getVar(name);
+	if (!var) {
 		std::cerr << "undeclared variable " << name << endl;
+		exit(1);
 		return NULL;
 	}
-	return new LoadInst(context.locals()[name], "", false, context.currentBlock());
+	return new LoadInst(var, "", false, context.currentBlock());
 }
 
 Value* NMethodCall::codeGen(CodeGenContext& context)
@@ -123,11 +125,13 @@ math:
 Value* NAssignment::codeGen(CodeGenContext& context)
 {
 	std::cout << "Creating assignment for " << lhs.name << endl;
-	if (context.locals().find(lhs.name) == context.locals().end()) {
+	Value* var = context.getVar(lhs.name);
+	if (!var) {
 		std::cerr << "undeclared variable " << lhs.name << endl;
+		exit(1);
 		return NULL;
 	}
-	return new StoreInst(rhs.codeGen(context), context.locals()[lhs.name], false, context.currentBlock());
+	return new StoreInst(rhs.codeGen(context), var, false, context.currentBlock());
 }
 
 Value* NBlock::codeGen(CodeGenContext& context)
@@ -144,7 +148,7 @@ Value* NBlock::codeGen(CodeGenContext& context)
 
 Value* NExpressionStatement::codeGen(CodeGenContext& context)
 {
-	std::cout << "Generating code forr " << typeid(expression).name() << endl;
+	std::cout << "Generating code for " << typeid(expression).name() << endl;
 	return expression.codeGen(context);
 }
 
@@ -202,7 +206,7 @@ Value* NFunctionDeclaration::codeGen(CodeGenContext& context)
 Value* NIfStatement::codeGen(CodeGenContext& context)
 {
 	std::cout << "Generating if statement" << endl;
-	Value *condV = _cond.codeGen(context);
+	Value *condV = _cond->codeGen(context);
 
 	IRBuilder<> Builder(context.currentBlock());
 
@@ -218,7 +222,7 @@ Value* NIfStatement::codeGen(CodeGenContext& context)
 	Builder.CreateCondBr(condV, thenBB, elseBB);
 
 	context.pushBlock(thenBB);
-	Value* thenV = _then.codeGen(context);
+	Value* thenV = _then->codeGen(context);
 	context.popBlock();
 
 	Builder.SetInsertPoint(thenBB);
@@ -227,9 +231,9 @@ Value* NIfStatement::codeGen(CodeGenContext& context)
 	TheFunction->getBasicBlockList().push_back(elseBB);
 	Builder.SetInsertPoint(elseBB);
 
-	if (&_then != &_else) { // if false - no else block defined
+	if (_then != _else) { // if false - no else block defined
 		context.pushBlock(elseBB);
-		Value* elseV = _else.codeGen(context);
+		Value* elseV = _else->codeGen(context);
 		context.popBlock();
 	}
 
@@ -239,6 +243,45 @@ Value* NIfStatement::codeGen(CodeGenContext& context)
 	Builder.SetInsertPoint(ifContBB);
 
 	context.pushBlock(ifContBB); //no need to pop
+
+	return TheFunction;
+}
+
+Value* NWhileStatement::codeGen(CodeGenContext& context)
+{
+	std::cout << "Generating while statement" << endl;
+
+	IRBuilder<> Builder(context.currentBlock());
+
+	Function *TheFunction = Builder.GetInsertBlock()->getParent();
+
+	// Create blocks for the then and else cases.  Insert the 'then' block at the end of the function.
+	BasicBlock *loopCondBB = BasicBlock::Create(getGlobalContext(), "loopCond", TheFunction);
+	BasicBlock *loopBB = BasicBlock::Create(getGlobalContext(), "loop");
+	BasicBlock *whileContBB = BasicBlock::Create(getGlobalContext(), "whilecont");
+
+	Builder.CreateBr(loopCondBB);
+	Builder.SetInsertPoint(loopCondBB);
+
+	context.pushBlock(loopCondBB);
+	Value *condV = _cond->codeGen(context);
+	context.popBlock();
+
+	condV = Builder.CreateICmpNE(condV, ConstantInt::get(Type::getInt64Ty(getGlobalContext()), 0), "whilecond");
+	Builder.CreateCondBr(condV, loopBB, whileContBB);
+	Builder.SetInsertPoint(loopBB);
+
+	context.pushBlock(loopBB);
+	Value* thenV = _then->codeGen(context);
+	context.popBlock();
+	Builder.CreateBr(loopCondBB);
+
+	TheFunction->getBasicBlockList().push_back(loopBB);
+
+	TheFunction->getBasicBlockList().push_back(whileContBB);
+	Builder.SetInsertPoint(whileContBB);
+
+	context.pushBlock(whileContBB); //no need to pop
 
 	return TheFunction;
 }

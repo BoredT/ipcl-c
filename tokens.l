@@ -15,6 +15,7 @@ int linenum = 1;
 "return"				printf("TRETURN "); return TOKEN(TRETURN);
 "if"					printf("TIF "); return TOKEN(TIF);
 "else"					printf("TELSE "); return TOKEN(TELSE);
+"while"					printf("TWHILE "); return TOKEN(TWHILE);
 [a-zA-Z_][a-zA-Z0-9_]* 	printf("TIDENTIFIER "); SAVE_TOKEN; return TIDENTIFIER;
 [0-9]+\.[0-9]* 			printf("TDOUBLE "); SAVE_TOKEN; return TDOUBLE;
 [0-9]+					printf("TINTEGER "); SAVE_TOKEN; return TINTEGER;

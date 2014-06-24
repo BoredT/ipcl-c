@@ -121,11 +121,78 @@ public:
 };
 
 class NIfStatement : public NStatement {
+	bool _then_alloc;
+	bool _else_alloc;
 public:
-	NExpression& _cond;
-	NStatement& _then;
-	NStatement& _else;
-	NIfStatement(NExpression& cond, NStatement& then_, NStatement& else_) : 
-		_cond(cond), _then(then_), _else(else_) { }
+	NExpression* _cond;
+	NBlock* _then;
+	NBlock* _else;
+
+	NIfStatement(NExpression* cond, NStatement* then_, NStatement* else_) : 
+		_cond(cond) {
+		_then = new NBlock();
+		_then->statements.push_back(then_);
+		_then_alloc = true;
+
+		_else = new NBlock();
+		_else->statements.push_back(else_);
+		_else_alloc =- true;
+	}
+
+	NIfStatement(NExpression* cond, NBlock* then_, NStatement* else_) : 
+		_cond(cond), _then(then_) {
+
+		_else = new NBlock();
+		_else->statements.push_back(else_);
+		_else_alloc =- true;
+	}
+
+	NIfStatement(NExpression* cond, NStatement* then_, NBlock* else_) : 
+		_cond(cond), _else(else_) {
+		_then = new NBlock();
+		_then->statements.push_back(then_);
+		_then_alloc = true;
+	}
+
+	NIfStatement(NExpression* cond, NBlock* then_, NBlock* else_) : 
+		_cond(cond), _then(then_), _else(else_) {}
+
 	virtual llvm::Value* codeGen(CodeGenContext& context);
+
+	~NIfStatement() {
+		if (_then_alloc) {
+			delete _then;
+			_then = 0;
+		}
+		if (_else_alloc) {
+			delete _else;
+			_else = 0;
+		}
+	}
+};
+
+class NWhileStatement : public NStatement {
+bool _then_alloc;
+public:
+	NExpression* _cond;
+	NBlock* _then;
+
+	NWhileStatement(NExpression* cond, NBlock* then_) : 
+		_cond(cond), _then(then_) { }
+		
+	NWhileStatement(NExpression* cond, NStatement* then_) : 
+		_cond(cond) { 
+		_then = new NBlock();
+		_then->statements.push_back(then_);
+		_then_alloc = true;
+	}
+
+	virtual llvm::Value* codeGen(CodeGenContext& context);
+
+	~NWhileStatement() {
+		if (_then_alloc) {
+			delete _then;
+			_then = 0;
+		}
+	}
 };
